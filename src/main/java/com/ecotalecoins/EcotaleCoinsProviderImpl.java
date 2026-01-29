@@ -6,6 +6,7 @@ import com.ecotalecoins.currency.BankManager;
 import com.ecotalecoins.currency.CoinDropper;
 import com.ecotalecoins.currency.CoinManager;
 import com.ecotalecoins.currency.InventorySpaceCalculator;
+import com.ecotalecoins.currency.InventorySpaceCalculator.SpaceResult;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.component.Ref;
@@ -18,20 +19,20 @@ import java.util.UUID;
 
 /**
  * Implementation of PhysicalCoinsProvider for EcotaleCoins addon.
- * This bridges the Core's interface with our actual coin implementations.
- * 
+ * Uses secure operations with pre-validation and detailed results.
+ *
  * @author Ecotale
- * @since 1.1.0
+ * @since 1.0.0 (Secure API: 1.2.0)
  */
 public class EcotaleCoinsProviderImpl implements PhysicalCoinsProvider {
-    
+
     // ========== Inventory Operations ==========
-    
+
     @Override
     public long countInInventory(@Nonnull Player player) {
         return CoinManager.countCoins(player);
     }
-    
+
     @Override
     public boolean canAfford(@Nonnull Player player, long amount) {
         return CoinManager.canAfford(player, amount);
@@ -39,27 +40,58 @@ public class EcotaleCoinsProviderImpl implements PhysicalCoinsProvider {
 
     @Override
     public CoinOperationResult canFitAmount(@Nonnull Player player, long amount) {
-        if (amount <= 0) {
-            return CoinOperationResult.invalidAmount(amount);
+        if (player == null) {
+            return CoinOperationResult.invalidPlayer();
         }
-        InventorySpaceCalculator.SpaceResult spaceResult = InventorySpaceCalculator.canFitAmount(player, amount);
-        if (spaceResult.canFit()) {
+        if (amount <= 0) {
+            return amount == 0 ? CoinOperationResult.success(0) : CoinOperationResult.invalidAmount(amount);
+        }
+
+        SpaceResult result = InventorySpaceCalculator.canFitAmount(player, amount);
+        if (result.canFit()) {
             return CoinOperationResult.success(amount);
         }
-        return CoinOperationResult.notEnoughSpace(amount, spaceResult.slotsNeeded(), spaceResult.slotsAvailable());
+        return CoinOperationResult.notEnoughSpace(amount, result.slotsNeeded(), result.slotsAvailable());
     }
 
     @Override
     public CoinOperationResult giveCoins(@Nonnull Player player, long amount) {
+        if (player == null) {
+            return CoinOperationResult.invalidPlayer();
+        }
         if (amount <= 0) {
-            return CoinOperationResult.invalidAmount(amount);
+            return amount == 0 ? CoinOperationResult.success(0) : CoinOperationResult.invalidAmount(amount);
         }
-        if (CoinManager.giveCoins(player, amount)) {
-            return CoinOperationResult.success(amount);
-        } else {
-            InventorySpaceCalculator.SpaceResult spaceResult = InventorySpaceCalculator.canFitAmount(player, amount);
-            return CoinOperationResult.notEnoughSpace(amount, spaceResult.slotsNeeded(), spaceResult.slotsAvailable());
+
+        // Pre-check space before attempting
+        CoinOperationResult check = canFitAmount(player, amount);
+        if (!check.isSuccess()) {
+            return check;
         }
+
+        // Actually give coins
+        boolean success = CoinManager.giveCoins(player, amount);
+        return success ? CoinOperationResult.success(amount)
+                       : CoinOperationResult.notEnoughSpace(amount, 0, 0);
+    }
+
+    @Override
+    public CoinOperationResult takeCoins(@Nonnull Player player, long amount) {
+        if (player == null) {
+            return CoinOperationResult.invalidPlayer();
+        }
+        if (amount <= 0) {
+            return amount == 0 ? CoinOperationResult.success(0) : CoinOperationResult.invalidAmount(amount);
+        }
+
+        long balance = CoinManager.countCoins(player);
+        if (balance < amount) {
+            return CoinOperationResult.insufficientFunds(amount, balance);
+        }
+
+        boolean success = CoinManager.takeCoins(player, amount);
+        return success ? CoinOperationResult.success(amount)
+                       : CoinOperationResult.insufficientFunds(amount, balance);
     }
 
 
@@ -112,33 +144,48 @@ public class EcotaleCoinsProviderImpl implements PhysicalCoinsProvider {
 
     @Override
     public CoinOperationResult bankDeposit(@Nonnull Player player, @Nonnull UUID playerUuid, long amount) {
+        if (player == null) {
+            return CoinOperationResult.invalidPlayer();
+        }
         if (amount <= 0) {
-            return CoinOperationResult.invalidAmount(amount);
+            return amount == 0 ? CoinOperationResult.success(0) : CoinOperationResult.invalidAmount(amount);
         }
-        if (BankManager.deposit(player, playerUuid, amount)) {
-            return CoinOperationResult.success(amount);
-        } else {
-            long actualBalance = CoinManager.countCoins(player);
-            return CoinOperationResult.insufficientFunds(amount, actualBalance);
+
+        // Check if player has enough coins
+        long balance = CoinManager.countCoins(player);
+        if (balance < amount) {
+            return CoinOperationResult.insufficientFunds(amount, balance);
         }
+
+        boolean success = BankManager.deposit(player, playerUuid, amount);
+        return success ? CoinOperationResult.success(amount)
+                       : CoinOperationResult.insufficientFunds(amount, balance);
     }
 
     @Override
     public CoinOperationResult bankWithdraw(@Nonnull Player player, @Nonnull UUID playerUuid, long amount) {
+        if (player == null) {
+            return CoinOperationResult.invalidPlayer();
+        }
         if (amount <= 0) {
-            return CoinOperationResult.invalidAmount(amount);
+            return amount == 0 ? CoinOperationResult.success(0) : CoinOperationResult.invalidAmount(amount);
         }
-        if (BankManager.withdraw(player, playerUuid, amount)) {
-            return CoinOperationResult.success(amount);
-        } else {
-            long bankBalance = BankManager.getBankBalance(playerUuid);
-            if (bankBalance < amount) {
-                return CoinOperationResult.insufficientFunds(amount, bankBalance);
-            } else {
-                InventorySpaceCalculator.SpaceResult spaceResult = InventorySpaceCalculator.canFitAmount(player, amount);
-                return CoinOperationResult.notEnoughSpace(amount, spaceResult.slotsNeeded(), spaceResult.slotsAvailable());
-            }
+
+        // Check if bank has enough
+        long bankBalance = BankManager.getBankBalance(playerUuid);
+        if (bankBalance < amount) {
+            return CoinOperationResult.insufficientFunds(amount, bankBalance);
         }
+
+        // Check if coins will fit in inventory
+        CoinOperationResult spaceCheck = canFitAmount(player, amount);
+        if (!spaceCheck.isSuccess()) {
+            return spaceCheck;
+        }
+
+        boolean success = BankManager.withdraw(player, playerUuid, amount);
+        return success ? CoinOperationResult.success(amount)
+                       : CoinOperationResult.insufficientFunds(amount, bankBalance);
     }
 
     @Override

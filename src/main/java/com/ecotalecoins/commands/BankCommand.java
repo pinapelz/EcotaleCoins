@@ -6,7 +6,6 @@ import com.ecotalecoins.transaction.SecureTransaction;
 import com.ecotale.api.EcotaleAPI;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.CommandSender;
@@ -25,35 +24,35 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Bank command - Manage your bank account (physical coins).
- * 
+ *
  * Usage:
  * - /bank                      → Shows balance info
  * - /bank deposit <amount|all> → Deposit coins from inventory to bank
  * - /bank withdraw <amount|all> → Withdraw coins from bank to inventory
- * 
+ *
  * @author Ecotale
  * @since 1.0.0
  */
 public class BankCommand extends AbstractAsyncCommand {
-    
+
     public BankCommand() {
         super("bank", "Manage your bank account");
         this.setPermissionGroup(GameMode.Creative);
-        
+
         this.addSubCommand(new BankDepositCommand());
         this.addSubCommand(new BankWithdrawCommand());
     }
-    
+
     @NonNullDecl
     @Override
     protected CompletableFuture<Void> executeAsync(CommandContext ctx) {
         CommandSender sender = ctx.sender();
-        
+
         if (!(sender instanceof Player player)) {
             ctx.sendMessage(Message.raw("This command can only be used by players").color(Color.RED));
             return CompletableFuture.completedFuture(null);
         }
-        
+
         Ref<EntityStore> ref = player.getReference();
         if (ref == null || !ref.isValid()) {
             ctx.sendMessage(Message.raw("Error: Could not get your player data").color(Color.RED));
@@ -64,6 +63,16 @@ public class BankCommand extends AbstractAsyncCommand {
         World world = store.getExternalData().getWorld();
         if (world == null) {
             return CompletableFuture.completedFuture(null);
+        }
+
+        // Strict permission check
+        if (!player.hasPermission("ecotale.ecotalecoins.command.bank")) {
+            CompletableFuture<Void> denied = new CompletableFuture<>();
+            world.execute(() -> {
+                ctx.sendMessage(Message.raw("You don't have permission to use the bank.").color(Color.RED));
+                denied.complete(null);
+            });
+            return denied;
         }
 
         // No subcommand = open Bank GUI
@@ -78,23 +87,23 @@ public class BankCommand extends AbstractAsyncCommand {
     // ========== Deposit Subcommand ==========
     private static class BankDepositCommand extends AbstractAsyncCommand {
         private final RequiredArg<String> amountArg;
-        
+
         public BankDepositCommand() {
             super("deposit", "Deposit coins to your bank");
             this.addAliases("d");
             this.amountArg = this.withRequiredArg("amount", "Amount or 'all'", ArgTypes.STRING);
         }
-        
+
         @NonNullDecl
         @Override
         protected CompletableFuture<Void> executeAsync(CommandContext ctx) {
             CommandSender sender = ctx.sender();
-            
+
             if (!(sender instanceof Player player)) {
                 ctx.sendMessage(Message.raw("This command can only be used by players").color(Color.RED));
                 return CompletableFuture.completedFuture(null);
             }
-            
+
             Ref<EntityStore> ref = player.getReference();
             if (ref == null || !ref.isValid()) {
                 return CompletableFuture.completedFuture(null);
@@ -106,14 +115,24 @@ public class BankCommand extends AbstractAsyncCommand {
                 return CompletableFuture.completedFuture(null);
             }
 
+            // Permission check
+            if (!player.hasPermission("ecotale.ecotalecoins.command.bank")) {
+                CompletableFuture<Void> denied = new CompletableFuture<>();
+                world.execute(() -> {
+                    ctx.sendMessage(Message.raw("You don't have permission to use the bank.").color(Color.RED));
+                    denied.complete(null);
+                });
+                return denied;
+            }
+
             String amountStr = ctx.get(amountArg);
-            
+
             return CompletableFuture.runAsync(() -> {
                 PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
                 if (playerRef == null) return;
-                
+
                 UUID playerUuid = playerRef.getUuid();
-                
+
                 long amount;
                 if (amountStr.equalsIgnoreCase("all")) {
                     amount = CoinManager.countCoins(player);
@@ -141,7 +160,7 @@ public class BankCommand extends AbstractAsyncCommand {
                 }
 
                 SecureTransaction.TransactionResult result = SecureTransaction.executeSecureDeposit(player, playerUuid, amount);
-                
+
                 if (result.isSuccess()) {
                     long newBankBalance = BankManager.getBankBalance(playerUuid);
                     ctx.sendMessage(Message.join(
@@ -160,23 +179,23 @@ public class BankCommand extends AbstractAsyncCommand {
     // ========== Withdraw Subcommand ==========
     private static class BankWithdrawCommand extends AbstractAsyncCommand {
         private final RequiredArg<String> amountArg;
-        
+
         public BankWithdrawCommand() {
             super("withdraw", "Withdraw coins from your bank");
             this.addAliases("w");
             this.amountArg = this.withRequiredArg("amount", "Amount or 'all'", ArgTypes.STRING);
         }
-        
+
         @NonNullDecl
         @Override
         protected CompletableFuture<Void> executeAsync(CommandContext ctx) {
             CommandSender sender = ctx.sender();
-            
+
             if (!(sender instanceof Player player)) {
                 ctx.sendMessage(Message.raw("This command can only be used by players").color(Color.RED));
                 return CompletableFuture.completedFuture(null);
             }
-            
+
             Ref<EntityStore> ref = player.getReference();
             if (ref == null || !ref.isValid()) {
                 return CompletableFuture.completedFuture(null);
@@ -188,14 +207,24 @@ public class BankCommand extends AbstractAsyncCommand {
                 return CompletableFuture.completedFuture(null);
             }
 
+            // Permission check
+            if (!player.hasPermission("ecotale.ecotalecoins.command.bank")) {
+                CompletableFuture<Void> denied = new CompletableFuture<>();
+                world.execute(() -> {
+                    ctx.sendMessage(Message.raw("You don't have permission to use the bank.").color(Color.RED));
+                    denied.complete(null);
+                });
+                return denied;
+            }
+
             String amountStr = ctx.get(amountArg);
-            
+
             return CompletableFuture.runAsync(() -> {
                 PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
                 if (playerRef == null) return;
-                
+
                 UUID playerUuid = playerRef.getUuid();
-                
+
                 long amount;
                 if (amountStr.equalsIgnoreCase("all")) {
                     amount = BankManager.getBankBalance(playerUuid);
@@ -223,7 +252,7 @@ public class BankCommand extends AbstractAsyncCommand {
                 }
 
                 SecureTransaction.TransactionResult result = SecureTransaction.executeSecureWithdraw(player, playerUuid, amount);
-                
+
                 if (result.isSuccess()) {
                     long newBankBalance = BankManager.getBankBalance(playerUuid);
                     ctx.sendMessage(Message.join(
