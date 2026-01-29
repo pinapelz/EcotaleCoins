@@ -9,8 +9,9 @@ public enum CoinType {
     IRON("Coin_Iron", 10, "Iron"),
     COBALT("Coin_Cobalt", 100, "Cobalt"),
     GOLD("Coin_Gold", 1_000, "Gold"),
-    MITHRIL("Coin_Mithril", 10_000, "Mithril"),
-    ADAMANTITE("Coin_Adamantite", 100_000, "Adamantite");
+    ADAMANTITE("Coin_Adamantite", 10_000, "Adamantite"),
+    MITHRIL("Coin_Mithril", 100_000, "Mithril");
+
 
     private final String itemId;
     private final long value;
