@@ -878,7 +878,7 @@ public class BankGui extends InteractiveCustomUIPage<BankGui.BankGuiData> {
     /** Translate all static UI elements */
     private void translateUI(UICommandBuilder cmd) {
         // Header
-        cmd.set("#Title.Text", t("gui.bank.title", "BANK"));
+        cmd.set("#Title.Text", "BANK OF WONHEE");
         
         // Wealth bar labels (using direct IDs, not child selectors)
         cmd.set("#WalletLabel.Text", t("gui.bank.wallet", "WALLET"));

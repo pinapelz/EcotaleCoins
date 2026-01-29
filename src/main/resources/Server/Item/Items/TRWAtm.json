@@ -1,0 +1,77 @@
+{
+  "TranslationProperties": {
+    "Name": "ATM Machine"
+  },
+  "PlayerAnimationsId": "Block",
+  "Categories": ["Blocks.Deco"],
+  "Recipe": {
+    "TimeSeconds": 1,
+    "Input": [
+      {
+        "ItemId": "Ingredient_Bar_Copper",
+        "Quantity": 8
+      },
+      {
+        "ItemId": "Ingredient_Bar_Iron",
+        "Quantity": 8
+      },
+      {
+        "ItemId": "Ingredient_Bar_Gold",
+        "Quantity": 1
+      }
+    ],
+    "BenchRequirement": [
+      {
+        "Id": "Workbench",
+        "Type": "Crafting",
+        "Categories": ["Workbench_Tinkering"]
+      }
+    ]
+  },
+  "Icon": "Icons/ItemsGenerated/TRWAtm.png",
+  "BlockType": {
+    "BlockParticleSetId": "Wood",
+    "CustomModel": "Blocks/TRWAtm.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/TRWAtm.png",
+        "Weight": 1
+      }
+    ],
+    "DrawType": "Model",
+    "Flags": {},
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "Rocks"
+      }
+    },
+    "Material": "Solid",
+    "Opacity": "Transparent",
+    "ParticleColor": "#4e462c",
+    "Support": {
+      "Down": [
+        {
+          "FaceType": "Full"
+        }
+      ]
+    },
+    "VariantRotation": "NESW",
+    "BlockSoundSetId": "Wood",
+    "BlockEntity": {
+      "Components": {
+        "CopperComputer": {}
+      }
+    },
+    "Interactions": {
+      "Use": {
+        "Interactions": [
+          {
+            "Type": "TRWEcotaleAtmInteraction"
+          }
+        ]
+      }
+    }
+  },
+  "Scale": 0.6,
+  "MaxStack": 1
+}

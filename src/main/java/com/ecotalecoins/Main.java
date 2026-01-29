@@ -3,8 +3,10 @@ package com.ecotalecoins;
 import com.ecotale.api.EcotaleAPI;
 import com.ecotalecoins.commands.BankCommand;
 import com.ecotalecoins.currency.CoinAssetManager;
+import com.ecotalecoins.interactions.ATMInteraction;
 import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.ShutdownReason;
+import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
@@ -57,13 +59,16 @@ public class Main extends JavaPlugin {
         
         // Register commands
         this.getCommandRegistry().registerCommand(new BankCommand());
+
+        // Register interactions
+        this.getCodecRegistry(Interaction.CODEC).register("TRWEcotaleAtmInteraction", ATMInteraction.class, ATMInteraction.CODEC);
         
         // First-time setup check
         if (this.coinAssetManager.isFirstTimeSetup()) {
             scheduleFirstTimeRestart();
             return;
         }
-        
+
         this.getLogger().at(Level.INFO).log("[EcotaleCoins] Physical coins system loaded!");
     }
     

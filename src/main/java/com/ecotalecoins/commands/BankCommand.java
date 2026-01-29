@@ -38,7 +38,7 @@ public class BankCommand extends AbstractAsyncCommand {
     
     public BankCommand() {
         super("bank", "Manage your bank account");
-        this.setPermissionGroup(GameMode.Adventure);
+        this.setPermissionGroup(GameMode.Creative);
         
         this.addSubCommand(new BankDepositCommand());
         this.addSubCommand(new BankWithdrawCommand());
