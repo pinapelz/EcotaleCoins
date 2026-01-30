@@ -91,41 +91,27 @@ public class EcotaleCoinsProviderImpl implements PhysicalCoinsProvider {
 
         boolean success = CoinManager.takeCoins(player, amount);
         return success ? CoinOperationResult.success(amount)
-                       : CoinOperationResult.insufficientFunds(amount, balance);
-    }
-
-
-    @Override
-    public CoinOperationResult takeCoins(@Nonnull Player player, long amount) {
-        if (amount <= 0) {
-            return CoinOperationResult.invalidAmount(amount);
-        }
-        if (CoinManager.takeCoins(player, amount)) {
-            return CoinOperationResult.success(amount);
-        } else {
-            long actualBalance = CoinManager.countCoins(player);
-            return CoinOperationResult.insufficientFunds(amount, actualBalance);
-        }
+                : CoinOperationResult.insufficientFunds(amount, balance);
     }
 
     // ========== World Drop Operations ==========
 
     @Override
     public void dropCoins(
-        @Nonnull ComponentAccessor<EntityStore> store,
-        @Nonnull CommandBuffer<EntityStore> commandBuffer,
-        @Nonnull Vector3d position,
-        long amount
+            @Nonnull ComponentAccessor<EntityStore> store,
+            @Nonnull CommandBuffer<EntityStore> commandBuffer,
+            @Nonnull Vector3d position,
+            long amount
     ) {
         CoinDropper.dropCoins(store, commandBuffer, position, amount);
     }
 
     @Override
     public void dropCoinsAtEntity(
-        @Nonnull Ref<EntityStore> entityRef,
-        @Nonnull ComponentAccessor<EntityStore> store,
-        @Nonnull CommandBuffer<EntityStore> commandBuffer,
-        long amount
+            @Nonnull Ref<EntityStore> entityRef,
+            @Nonnull ComponentAccessor<EntityStore> store,
+            @Nonnull CommandBuffer<EntityStore> commandBuffer,
+            long amount
     ) {
         CoinDropper.dropCoinsAtEntity(entityRef, store, commandBuffer, amount);
     }
@@ -159,7 +145,7 @@ public class EcotaleCoinsProviderImpl implements PhysicalCoinsProvider {
 
         boolean success = BankManager.deposit(player, playerUuid, amount);
         return success ? CoinOperationResult.success(amount)
-                       : CoinOperationResult.insufficientFunds(amount, balance);
+                : CoinOperationResult.insufficientFunds(amount, balance);
     }
 
     @Override
@@ -185,7 +171,7 @@ public class EcotaleCoinsProviderImpl implements PhysicalCoinsProvider {
 
         boolean success = BankManager.withdraw(player, playerUuid, amount);
         return success ? CoinOperationResult.success(amount)
-                       : CoinOperationResult.insufficientFunds(amount, bankBalance);
+                : CoinOperationResult.insufficientFunds(amount, bankBalance);
     }
 
     @Override
